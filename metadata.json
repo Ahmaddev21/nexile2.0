@@ -1,0 +1,7 @@
+{
+  "name": "Nexile Pharmacy OS",
+  "description": "Enterprise-grade pharmacy management platform with AI insights.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
