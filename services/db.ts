@@ -83,12 +83,21 @@ class DB {
   }
 
   deleteBranch(branchId: string) {
+    // 1. Remove the branch
     const branches = this.branches.filter(b => b.id !== branchId);
     this.setStorage('nexile_branches', branches);
     
-    // Cleanup: Remove branch assignment from users? 
-    // For simplicity in this mock, we leave the user data as is, 
-    // but in production you would cascade delete or nullify.
+    // 2. Cleanup: Remove this branch ID from any managers assigned to it
+    const users = this.users.map(u => {
+      if (u.role === UserRole.MANAGER && u.assignedBranchIds) {
+        return {
+          ...u,
+          assignedBranchIds: u.assignedBranchIds.filter(id => id !== branchId)
+        };
+      }
+      return u;
+    });
+    this.setStorage('nexile_users', users);
   }
 
   getBranchPerformance(branchId: string) {
@@ -96,10 +105,26 @@ class DB {
     const products = this.products.filter(p => p.branchId === branchId);
     
     const revenue = txs.reduce((sum, t) => sum + t.total, 0);
+    
+    // Calculate Real COGS (Cost of Goods Sold)
+    let cogs = 0;
+    txs.forEach(tx => {
+        tx.items.forEach(item => {
+            const product = this.products.find(p => p.id === item.productId);
+            if (product) {
+                cogs += (product.cost * item.quantity);
+            } else {
+                // Fallback for deleted products or legacy data (estimate 50% cost)
+                cogs += (item.price * item.quantity * 0.5); 
+            }
+        });
+    });
+
+    const grossProfit = revenue - cogs;
     const stockValue = products.reduce((sum, p) => sum + (p.stock * p.price), 0);
     const lowStockCount = products.filter(p => p.stock <= p.minStockLevel).length;
 
-    return { revenue, stockValue, lowStockCount, transactionCount: txs.length };
+    return { revenue, cogs, grossProfit, stockValue, lowStockCount, transactionCount: txs.length };
   }
 
   // --- User Management ---
@@ -112,6 +137,11 @@ class DB {
     users.push(newUser);
     this.setStorage('nexile_users', users);
     return newUser;
+  }
+
+  deleteUser(userId: string) {
+    const users = this.users.filter(u => u.id !== userId);
+    this.setStorage('nexile_users', users);
   }
 
   authenticateUser(email: string, password?: string, accessCode?: string, role?: UserRole): User | null {
@@ -155,9 +185,20 @@ class DB {
     }
   }
 
+  unassignManagerFromBranch(managerId: string, branchId: string) {
+    const users = this.users;
+    const manager = users.find(u => u.id === managerId);
+    if (manager && manager.role === UserRole.MANAGER && manager.assignedBranchIds) {
+      manager.assignedBranchIds = manager.assignedBranchIds.filter(id => id !== branchId);
+      this.updateUser(manager);
+    }
+  }
+
   generateAccessCode(): string {
-    // "AI" generated code: secure random 4 digit string
-    return Math.floor(1000 + Math.random() * 9000).toString();
+    // Strict 4 digit code
+    const min = 1000;
+    const max = 9999;
+    return Math.floor(Math.random() * (max - min + 1) + min).toString();
   }
 
   // --- Data Mutations ---

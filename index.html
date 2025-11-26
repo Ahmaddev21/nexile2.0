@@ -10,24 +10,41 @@
         darkMode: 'class',
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
             colors: {
+              // New Cheerful Brand Palette (Violet/Indigo/Fuchsia)
               brand: {
-                50: '#ecfdf5',
-                100: '#d1fae5',
-                200: '#a7f3d0',
-                300: '#6ee7b7',
-                400: '#34d399',
-                500: '#10b981',
-                600: '#059669',
-                700: '#047857',
-                800: '#065f46',
-                900: '#064e3b',
-                950: '#022c22',
+                50: '#f5f3ff',
+                100: '#ede9fe',
+                200: '#ddd6fe',
+                300: '#c4b5fd',
+                400: '#a78bfa',
+                500: '#8b5cf6', // Primary Violet
+                600: '#7c3aed',
+                700: '#6d28d9',
+                800: '#5b21b6',
+                900: '#4c1d95',
+                950: '#2e1065',
+              },
+              // Secondary Accents
+              sky: {
+                500: '#0ea5e9',
+                100: '#e0f2fe'
+              },
+              rose: {
+                500: '#f43f5e',
+                100: '#ffe4e6'
+              },
+              amber: {
+                400: '#fbbf24',
+                100: '#fef3c7'
               },
               dark: {
-                bg: '#09090b',
-                card: '#18181b',
-                border: '#27272a',
+                bg: '#0f172a', // Deep Slate instead of Black
+                card: '#1e293b',
+                border: '#334155',
               }
             },
             animation: {
@@ -37,7 +54,8 @@
               'fadeIn': 'fadeIn 0.5s ease-out forwards',
               'slideInRight': 'slideInRight 0.5s ease-out forwards',
               'scaleIn': 'scaleIn 0.3s ease-out forwards',
-              'shake': 'shake 0.4s linear'
+              'shake': 'shake 0.4s linear',
+              'bounce-slight': 'bounceSlight 2s infinite'
             },
             keyframes: {
               float: {
@@ -53,35 +71,53 @@
                  '100%': { opacity: '1', transform: 'translateX(0)' },
               },
               scaleIn: {
-                 '0%': { opacity: '0', transform: 'scale(0.9)' },
+                 '0%': { opacity: '0', transform: 'scale(0.95)' },
                  '100%': { opacity: '1', transform: 'scale(1)' },
               },
               shake: {
                  '0%, 100%': { transform: 'translateX(0)' },
                  '25%': { transform: 'translateX(-5px)' },
                  '75%': { transform: 'translateX(5px)' },
+              },
+              bounceSlight: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-5px)' }
               }
+            },
+            boxShadow: {
+              'glow': '0 0 20px rgba(139, 92, 246, 0.15)',
+              'card': '0 10px 30px -5px rgba(0, 0, 0, 0.05)',
+              'card-hover': '0 20px 40px -5px rgba(0, 0, 0, 0.1)',
             }
           },
         },
       };
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
       body { font-family: 'Inter', sans-serif; }
+      
+      /* Cheerful Glassmorphism */
       .glass {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
       }
-      /* Hide scrollbar for clean UI */
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      .glass-dark {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      /* Smooth Scrollbar */
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
       ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
-      ::-webkit-scrollbar-thumb:hover { background: #52525b; }
-      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
     </style>
   <script type="importmap">
 {
@@ -99,7 +135,7 @@
 }
 </script>
 </head>
-  <body class="bg-gray-50 dark:bg-dark-bg text-gray-900 dark:text-gray-100 transition-colors duration-300 antialiased">
+  <body class="bg-[#f8fafc] dark:bg-dark-bg text-slate-800 dark:text-slate-100 transition-colors duration-300 antialiased selection:bg-brand-200 selection:text-brand-900">
     <div id="root"></div>
   </body>
 </html>

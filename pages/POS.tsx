@@ -2,7 +2,7 @@ import React, { useState, useRef, useContext, useEffect } from 'react';
 import { db } from '../services/db';
 import { AuthContext } from '../App';
 import { Product, Transaction } from '../types';
-import { Scan, Trash2, Receipt, Plus, Minus, Camera, AlertTriangle, CheckCircle, Power, Zap } from 'lucide-react';
+import { Scan, Trash2, Receipt, Plus, Minus, Camera, AlertTriangle, CheckCircle, Power, Zap, Search } from 'lucide-react';
 
 export default function POS() {
   const { user } = useContext(AuthContext);
@@ -12,6 +12,9 @@ export default function POS() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [scanSuccess, setScanSuccess] = useState(false);
+  
+  // Visual Feedback State
+  const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -89,6 +92,36 @@ export default function POS() {
     return () => stopCamera();
   }, []);
 
+  // --- Identification Logic ---
+
+  const identifyProduct = (term: string): Product | undefined => {
+    const normalized = term.trim().toLowerCase();
+    
+    // 1. Exact SKU Match (Highest Priority - Barcode Scanner Behavior)
+    let match = db.products.find(p => 
+      p.sku.toLowerCase() === normalized && 
+      (user?.branchId ? p.branchId === user.branchId : true)
+    );
+    
+    // 2. Exact Name Match
+    if (!match) {
+       match = db.products.find(p => 
+        p.name.toLowerCase() === normalized && 
+        (user?.branchId ? p.branchId === user.branchId : true)
+      );
+    }
+    
+    // 3. Fuzzy Name Search (Fallback)
+    if (!match) {
+      match = db.products.find(p => 
+        p.name.toLowerCase().includes(normalized) && 
+        (user?.branchId ? p.branchId === user.branchId : true)
+      );
+    }
+    
+    return match;
+  };
+
   // --- Scanning Logic ---
 
   const simulateScanDetection = () => {
@@ -98,14 +131,21 @@ export default function POS() {
     );
     
     if (availableProducts.length > 0) {
+       // Pick a random product
        const randomProduct = availableProducts[Math.floor(Math.random() * availableProducts.length)];
        
-       // 2. Visual feedback that we "read" a code
-       setMessage({ text: `Decoding Barcode: ${randomProduct.sku}...`, type: 'info' });
+       // 2. Visual feedback using the SKU to simulate a real barcode read
+       setMessage({ text: `Scanning: ${randomProduct.sku}...`, type: 'info' });
        
-       // 3. Add a small delay to simulate processing time
+       // 3. Delay to simulate processing and perform ACTUAL lookup by SKU
+       // This ensures the identifyProduct logic is tested, not just the object passing
        setTimeout(() => {
-         handleProductScan(randomProduct);
+         const identified = identifyProduct(randomProduct.sku);
+         if (identified) {
+             handleProductScan(identified);
+         } else {
+             setMessage({ text: "Scan Error: Product exists but lookup failed.", type: 'error' });
+         }
        }, 600);
     } else {
        setMessage({ text: "No products available in this branch to scan.", type: 'error' });
@@ -137,22 +177,9 @@ export default function POS() {
 
   const handleManualScan = (e: React.FormEvent) => {
     e.preventDefault();
-    const term = scanInput.trim().toLowerCase();
-    if (!term) return;
+    if (!scanInput.trim()) return;
 
-    // 1. Prioritize Exact SKU Match (How barcode scanners work)
-    let product = db.products.find(p => 
-      p.sku.toLowerCase() === term && 
-      (user?.branchId ? p.branchId === user.branchId : true)
-    );
-
-    // 2. Fallback to Fuzzy Name Search
-    if (!product) {
-      product = db.products.find(p => 
-        p.name.toLowerCase().includes(term) && 
-        (user?.branchId ? p.branchId === user.branchId : true)
-      );
-    }
+    const product = identifyProduct(scanInput);
 
     if (product) {
       handleProductScan(product);
@@ -163,6 +190,8 @@ export default function POS() {
   };
 
   const addToCart = (product: Product) => {
+    setHighlightedItemId(product.id);
+    
     setCart(prev => {
       const existing = prev.find(i => i.product.id === product.id);
       if (existing) {
@@ -174,6 +203,11 @@ export default function POS() {
       }
       return [...prev, { product, qty: 1 }];
     });
+
+    // Remove highlight after animation
+    setTimeout(() => {
+      setHighlightedItemId(null);
+    }, 2000);
   };
 
   const updateQty = (idx: number, delta: number) => {
@@ -186,6 +220,8 @@ export default function POS() {
       }
       const newCart = [...prev];
       newCart[idx] = newItem;
+      setHighlightedItemId(newCart[idx].product.id);
+      setTimeout(() => setHighlightedItemId(null), 500);
       return newCart;
     });
   };
@@ -229,7 +265,7 @@ export default function POS() {
         {/* Scanner Area */}
         <div className="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-200 dark:border-dark-border shadow-sm">
           <div className="flex justify-between items-center mb-4">
-             <h2 className="text-lg font-bold flex items-center">
+             <h2 className="text-lg font-bold flex items-center text-slate-900 dark:text-white">
                 <Scan className="mr-2 text-brand-500" /> Barcode Scanner
              </h2>
              {isCameraActive && (
@@ -318,7 +354,7 @@ export default function POS() {
                       autoFocus
                       value={scanInput}
                       onChange={(e) => setScanInput(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-dark-border rounded-xl bg-gray-50 dark:bg-zinc-900 focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-dark-border rounded-xl bg-gray-50 dark:bg-zinc-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm"
                       placeholder="Scan Barcode or Type Name..."
                     />
                     <Scan className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
@@ -396,25 +432,37 @@ export default function POS() {
                 <p className="text-xs">Scan item or select from grid</p>
              </div>
           ) : (
-            cart.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-900/30 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-zinc-700 transition-colors group">
-                <div className="flex-1 min-w-0 mr-3">
-                  <p className="font-bold text-sm truncate text-gray-800 dark:text-gray-200">{item.product.name}</p>
-                  <p className="text-xs text-gray-500">${item.product.price.toFixed(2)} × {item.qty}</p>
+            cart.map((item, idx) => {
+              const isHighlighted = item.product.id === highlightedItemId;
+              return (
+                <div 
+                  key={idx} 
+                  className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-500 group ${
+                    isHighlighted 
+                    ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-300 dark:border-brand-700 scale-[1.02] shadow-md z-10' 
+                    : 'bg-gray-50 dark:bg-zinc-900/30 border-transparent hover:border-gray-200 dark:hover:border-zinc-700'
+                  }`}
+                >
+                  <div className="flex-1 min-w-0 mr-3">
+                    <p className={`font-bold text-sm truncate ${isHighlighted ? 'text-brand-700 dark:text-brand-300' : 'text-gray-800 dark:text-gray-200'}`}>
+                      {item.product.name}
+                    </p>
+                    <p className="text-xs text-gray-500">${item.product.price.toFixed(2)} × {item.qty}</p>
+                  </div>
+                  <div className="flex items-center bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm">
+                    <button onClick={() => updateQty(idx, -1)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-l-lg text-gray-500"><Minus size={12}/></button>
+                    <span className="text-sm font-bold w-8 text-center text-gray-800 dark:text-gray-200">{item.qty}</span>
+                    <button onClick={() => updateQty(idx, 1)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-r-lg text-gray-500"><Plus size={12}/></button>
+                  </div>
+                  <div className="ml-3 font-bold text-brand-600 w-16 text-right">
+                    ${(item.product.price * item.qty).toFixed(2)}
+                  </div>
+                  <button onClick={() => setCart(prev => prev.filter((_, i) => i !== idx))} className="ml-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                     <Trash2 size={14} />
+                  </button>
                 </div>
-                <div className="flex items-center bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm">
-                  <button onClick={() => updateQty(idx, -1)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-l-lg text-gray-500"><Minus size={12}/></button>
-                  <span className="text-sm font-bold w-8 text-center text-gray-800 dark:text-gray-200">{item.qty}</span>
-                  <button onClick={() => updateQty(idx, 1)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-r-lg text-gray-500"><Plus size={12}/></button>
-                </div>
-                <div className="ml-3 font-bold text-brand-600 w-16 text-right">
-                  ${(item.product.price * item.qty).toFixed(2)}
-                </div>
-                <button onClick={() => setCart(prev => prev.filter((_, i) => i !== idx))} className="ml-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <Trash2 size={14} />
-                </button>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

@@ -15,39 +15,39 @@ import {
   ArrowRight,
   Code,
   Cpu,
-  Pill
+  Pill,
+  Sparkles
 } from 'lucide-react';
 
 type AuthMode = 'LOGIN' | 'SIGNUP' | 'RESET';
 
-// --- 3D Art Component: The Architects (Programmer, Thinker, Solver) ---
-// Enhanced with Medical/Pharmacy Elements
+// --- 3D Art: Cheerful Edition (Sunrise Gradient) ---
 const AbstractBuildersArt = () => (
   <svg className="w-full h-full max-h-[85vh]" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet">
     <defs>
-      {/* 3D Sphere Gradient for Heads */}
-      <radialGradient id="grad-head-3d" cx="30%" cy="30%" r="70%" fx="30%" fy="30%">
-        <stop offset="0%" stopColor="#6ee7b7" />
-        <stop offset="50%" stopColor="#10b981" />
-        <stop offset="100%" stopColor="#065f46" />
+      {/* Cheerful Gradients */}
+      <radialGradient id="grad-sun" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+        <stop offset="0%" stopColor="#fbbf24" /> {/* Amber */}
+        <stop offset="100%" stopColor="#f59e0b" />
       </radialGradient>
 
-      {/* 3D Cylinder Gradient for Bodies */}
-      <linearGradient id="grad-body-3d" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#059669" />
-        <stop offset="50%" stopColor="#34d399" />
-        <stop offset="100%" stopColor="#047857" />
+      <linearGradient id="grad-pawn-body" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#a78bfa" /> {/* Soft Violet */}
+        <stop offset="100%" stopColor="#8b5cf6" />
       </linearGradient>
 
-      {/* Hologram Screen Gradient */}
-      <linearGradient id="grad-hologram" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#34d399" stopOpacity="0.1"/>
-        <stop offset="50%" stopColor="#34d399" stopOpacity="0.4"/>
-        <stop offset="100%" stopColor="#34d399" stopOpacity="0.1"/>
+      <linearGradient id="grad-pawn-head" x1="0%" y1="0%" x2="0%" y2="100%">
+         <stop offset="0%" stopColor="#f472b6" /> {/* Pink */}
+         <stop offset="100%" stopColor="#e879f9" />
       </linearGradient>
 
-      <filter id="glow-3d" x="-50%" y="-50%" width="200%" height="200%">
-        <feGaussianBlur stdDeviation="8" result="coloredBlur" />
+      <linearGradient id="grad-beam" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.6"/>
+        <stop offset="100%" stopColor="#38bdf8" stopOpacity="0"/>
+      </linearGradient>
+
+      <filter id="glow-soft" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="6" result="coloredBlur" />
         <feMerge>
           <feMergeNode in="coloredBlur" />
           <feMergeNode in="SourceGraphic" />
@@ -55,129 +55,85 @@ const AbstractBuildersArt = () => (
       </filter>
     </defs>
 
-    {/* --- Background Medical Elements (Floating) --- */}
-    <g opacity="0.15">
-       {/* Floating Crosses */}
-       <g transform="translate(200, 200)">
-          <path d="M-20,0 L20,0 M0,-20 L0,20" stroke="#fff" strokeWidth="8">
-             <animateTransform attributeName="transform" type="rotate" values="0 0 0; 360 0 0" dur="20s" repeatCount="indefinite" />
+    {/* Floating Background Bubbles */}
+    <g opacity="0.4">
+       <circle cx="200" cy="200" r="40" fill="#fcd34d">
+         <animate attributeName="cy" values="200;180;200" dur="6s" repeatCount="indefinite" />
+       </circle>
+       <circle cx="800" cy="150" r="20" fill="#67e8f9">
+         <animate attributeName="cy" values="150;170;150" dur="5s" repeatCount="indefinite" />
+       </circle>
+       <circle cx="850" cy="800" r="60" fill="#f9a8d4">
+         <animate attributeName="cy" values="800;780;800" dur="7s" repeatCount="indefinite" />
+       </circle>
+    </g>
+
+    {/* Floating Medical Icons (White with Soft Shadow) */}
+    <g opacity="0.8">
+       <g transform="translate(150, 750) rotate(-15)">
+          <rect x="-25" y="-10" width="50" height="20" rx="10" fill="#fff" filter="url(#glow-soft)" />
+          <animateTransform attributeName="transform" type="rotate" values="-15;0;-15" dur="5s" repeatCount="indefinite" />
+       </g>
+       <g transform="translate(850, 300)">
+          <path d="M-15,0 L15,0 M0,-15 L0,15" stroke="#fff" strokeWidth="8" strokeLinecap="round" filter="url(#glow-soft)">
+             <animateTransform attributeName="transform" type="rotate" values="0;45;0" dur="4s" repeatCount="indefinite" />
           </path>
-       </g>
-       <g transform="translate(800, 300)">
-          <path d="M-15,0 L15,0 M0,-15 L0,15" stroke="#fff" strokeWidth="6">
-             <animateTransform attributeName="transform" type="rotate" values="0 0 0; -360 0 0" dur="25s" repeatCount="indefinite" />
-          </path>
-       </g>
-       {/* Floating Pills */}
-       <g transform="translate(850, 800) rotate(45)">
-          <rect x="-30" y="-10" width="60" height="20" rx="10" stroke="#fff" strokeWidth="2" fill="none">
-             <animate attributeName="opacity" values="0.5;1;0.5" dur="5s" repeatCount="indefinite" />
-          </rect>
-          <line x1="0" y1="-10" x2="0" y2="10" stroke="#fff" strokeWidth="2" />
-       </g>
-       <g transform="translate(150, 750) rotate(-30)">
-          <rect x="-20" y="-8" width="40" height="16" rx="8" stroke="#fff" strokeWidth="2" fill="none" />
-          <line x1="0" y1="-8" x2="0" y2="8" stroke="#fff" strokeWidth="2" />
        </g>
     </g>
 
-    {/* --- Floor Shadow --- */}
-    <ellipse cx="500" cy="800" rx="350" ry="60" fill="#000" opacity="0.3" filter="url(#glow-3d)" />
+    {/* Floor Shadow */}
+    <ellipse cx="500" cy="820" rx="300" ry="40" fill="#4c1d95" opacity="0.1" />
 
-    {/* --- CENTER: The Nexile Core (Abstract Medical Cube) --- */}
+    {/* CENTER CORE (Cube) */}
     <g transform="translate(500, 550)">
-       {/* Core Energy Field */}
-       <circle r="90" fill="rgba(16, 185, 129, 0.05)" filter="url(#glow-3d)">
-          <animate attributeName="r" values="90;110;90" dur="4s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.3;0.5;0.3" dur="4s" repeatCount="indefinite" />
+       {/* Glow behind */}
+       <circle r="100" fill="#c4b5fd" opacity="0.3" filter="url(#glow-soft)">
+          <animate attributeName="r" values="100;120;100" dur="3s" repeatCount="indefinite" />
        </circle>
-       {/* Isometric Cube Wireframe */}
-       <g stroke="#ecfdf5" strokeWidth="3" fill="rgba(5, 150, 105, 0.2)">
-         <path d="M0,-45 L40,-22 L40,22 L0,45 L-40,22 L-40,-22 Z" />
-         <path d="M0,-45 L0,0 M0,0 L40,22 M0,0 L-40,22" />
-         <animateTransform attributeName="transform" type="rotate" values="0 0 0; 360 0 0" dur="30s" repeatCount="indefinite" />
-       </g>
-       {/* Inner Medical Cross */}
-       <g opacity="0.8" filter="url(#glow-3d)">
-         <path d="M0,-15 L0,15 M-15,0 L15,0" stroke="#fff" strokeWidth="4" strokeLinecap="round">
-             <animateTransform attributeName="transform" type="scale" values="1;1.2;1" dur="2s" repeatCount="indefinite" />
-         </path>
+       {/* Cube */}
+       <g stroke="#8b5cf6" strokeWidth="4" fill="rgba(255,255,255,0.8)">
+         <path d="M0,-50 L45,-25 L45,25 L0,50 L-45,25 L-45,-25 Z" />
+         <path d="M0,-50 L0,0 M0,0 L45,25 M0,0 L-45,25" opacity="0.5"/>
+         <animateTransform attributeName="transform" type="rotate" values="0 0 0; 360 0 0" dur="20s" repeatCount="indefinite" />
        </g>
     </g>
 
-    {/* --- LEFT PAWN: The Programmer (Logic/Code) --- */}
-    <g transform="translate(250, 680)">
-       <ellipse cx="0" cy="110" rx="60" ry="15" fill="#000" opacity="0.4" filter="url(#glow-3d)" />
-       
-       {/* Holographic Screen */}
-       <path d="M30,-70 L110,-90 L110,10 L30,30 Z" fill="url(#grad-hologram)" stroke="#34d399" strokeWidth="1" opacity="0.8">
-         <animate attributeName="opacity" values="0.6;0.9;0.6" dur="3s" repeatCount="indefinite" />
-       </path>
-       {/* Binary Code Stream */}
-       <g fill="#ecfdf5" opacity="0.8" fontSize="10" fontFamily="monospace">
-          <text x="40" y="-60">10101</text>
-          <text x="40" y="-45">01100</text>
-          <text x="40" y="-30">11010</text>
-          <animate attributeName="opacity" values="0.5;1;0.5" dur="1s" repeatCount="indefinite" />
-       </g>
-
+    {/* LEFT CHARACTER (Programmer) */}
+    <g transform="translate(280, 650)">
+       {/* Screen */}
+       <path d="M30,-80 L120,-100 L120,0 L30,20 Z" fill="url(#grad-beam)" />
        {/* Body */}
-       <path d="M-45,100 L-20,-20 L20,-20 L45,100 Z" fill="url(#grad-body-3d)" />
+       <path d="M-40,120 L-20,-20 L20,-20 L40,120 Z" fill="url(#grad-pawn-body)" />
        {/* Head */}
-       <circle cx="0" cy="-50" r="35" fill="url(#grad-head-3d)">
-         <animate attributeName="cy" values="-50;-48;-50" dur="2s" repeatCount="indefinite" />
+       <circle cx="0" cy="-50" r="35" fill="url(#grad-pawn-head)">
+         <animate attributeName="cy" values="-50;-55;-50" dur="3s" repeatCount="indefinite" />
        </circle>
     </g>
 
-    {/* --- TOP PAWN: The Thinker (Strategy/Analysis) --- */}
+    {/* TOP CHARACTER (Thinker) */}
     <g transform="translate(500, 320) scale(0.9)">
-       <ellipse cx="0" cy="110" rx="60" ry="15" fill="#000" opacity="0.4" filter="url(#glow-3d)" />
-       
-       {/* Orbiting Data Nodes */}
-       <g>
-         <ellipse rx="80" ry="25" fill="none" stroke="#34d399" strokeWidth="1" opacity="0.5" transform="rotate(-10)">
-           <animateTransform attributeName="transform" type="rotate" values="0 0 0; 360 0 0" dur="10s" repeatCount="indefinite" additive="sum"/>
-         </ellipse>
-         <circle r="6" fill="#fff">
-            <animateMotion dur="10s" repeatCount="indefinite" path="M-78,13 A80,25 0 1,0 78,-13 A80,25 0 1,0 -78,13" />
-         </circle>
-       </g>
-
+       <ellipse cx="0" cy="120" rx="50" ry="10" fill="#4c1d95" opacity="0.1" />
+       {/* Halo */}
+       <circle cx="0" cy="-60" r="50" fill="none" stroke="#fcd34d" strokeWidth="2" strokeDasharray="4,8">
+          <animateTransform attributeName="transform" type="rotate" values="0 0 -60; 360 0 -60" dur="10s" repeatCount="indefinite" />
+       </circle>
        {/* Body */}
-       <path d="M-45,100 L-20,-20 L20,-20 L45,100 Z" fill="url(#grad-body-3d)" />
+       <path d="M-40,120 L-20,-20 L20,-20 L40,120 Z" fill="url(#grad-pawn-body)" />
        {/* Head */}
-       <circle cx="0" cy="-50" r="35" fill="url(#grad-head-3d)">
-          <animate attributeName="cy" values="-50;-60;-50" dur="4s" repeatCount="indefinite" />
-       </circle>
-       {/* Neural Halo */}
-       <circle cx="0" cy="-60" r="50" fill="none" stroke="#fff" strokeWidth="1" strokeDasharray="2,4" opacity="0.4">
-          <animateTransform attributeName="transform" type="rotate" values="0 0 -60; -360 0 -60" dur="12s" repeatCount="indefinite" />
-       </circle>
+       <circle cx="0" cy="-50" r="35" fill="url(#grad-pawn-head)" />
     </g>
 
-    {/* --- RIGHT PAWN: The Solver (Execution/Care) --- */}
-    <g transform="translate(750, 680)">
-       <ellipse cx="0" cy="110" rx="60" ry="15" fill="#000" opacity="0.4" filter="url(#glow-3d)" />
-       
-       {/* Connection Beam to Core */}
-       <path d="M-30,-50 L-250,-130" stroke="url(#grad-hologram)" strokeWidth="3" opacity="0.6" strokeDasharray="10,5">
-          <animate attributeName="stroke-dashoffset" values="0;100" dur="2s" repeatCount="indefinite" />
+    {/* RIGHT CHARACTER (Solver) */}
+    <g transform="translate(720, 650)">
+       <path d="M-30,-50 L-220,-100" stroke="#f472b6" strokeWidth="4" strokeDasharray="10,10" strokeLinecap="round">
+         <animate attributeName="stroke-dashoffset" values="0;20" dur="1s" repeatCount="indefinite" />
        </path>
-
        {/* Body */}
-       <path d="M-45,100 L-20,-20 L20,-20 L45,100 Z" fill="url(#grad-body-3d)">
-          <animateTransform attributeName="transform" type="skewX" values="0;3;0" dur="4s" repeatCount="indefinite" />
-       </path>
+       <path d="M-40,120 L-20,-20 L20,-20 L40,120 Z" fill="url(#grad-pawn-body)" />
        {/* Head */}
-       <circle cx="0" cy="-50" r="35" fill="url(#grad-head-3d)">
-          <animate attributeName="cx" values="0;3;0" dur="4s" repeatCount="indefinite" />
+       <circle cx="0" cy="-50" r="35" fill="url(#grad-pawn-head)">
+          <animate attributeName="cx" values="0;5;0" dur="4s" repeatCount="indefinite" />
        </circle>
-       {/* Floating Plus Icon (Pharmacy Symbol) */}
-       <g transform="translate(40, -80)">
-          <path d="M-8,0 L8,0 M0,-8 L0,8" stroke="#fff" strokeWidth="3" opacity="0.8">
-             <animateTransform attributeName="transform" type="scale" values="0.8;1.2;0.8" dur="2s" repeatCount="indefinite" />
-          </path>
-       </g>
     </g>
   </svg>
 );
@@ -194,11 +150,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [branchId, setBranchId] = useState('');
   const [accessCode, setAccessCode] = useState('');
-  
-  // Helper to check if branches update has propagated
   const [branches, setBranches] = useState(db.branches);
   
-  // Fetch latest branches on mount/tab switch to ensure new branches appear
   React.useEffect(() => {
     setBranches(db.branches);
   }, [mode]);
@@ -293,126 +246,125 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 font-sans selection:bg-brand-500 selection:text-white overflow-hidden">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 font-sans overflow-hidden">
       
-      {/* --- Left Panel: Art & Storytelling --- */}
-      <div className="hidden lg:flex flex-col items-center justify-center relative bg-[#02040a] overflow-hidden border-r border-white/5">
-        {/* Background Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-900/20 via-[#02040a] to-[#02040a] z-0"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.15),transparent_70%)] z-0"></div>
+      {/* --- LEFT PANEL: CHEERFUL ART --- */}
+      <div className="hidden lg:flex flex-col items-center justify-center relative bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 overflow-hidden">
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.3),transparent_50%)]"></div>
         
-        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-8 xl:p-12">
-           {/* Branding Top Left - Prominent Logo */}
-           <div className="absolute top-10 left-10 flex items-center gap-3 z-20">
-             <div className="w-12 h-12 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center backdrop-blur-md shadow-lg shadow-brand-500/20">
-               <Activity className="text-brand-400 h-7 w-7" strokeWidth={2.5} />
+        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-12">
+           {/* Logo */}
+           <div className="absolute top-10 left-10 flex items-center gap-3">
+             <div className="w-12 h-12 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center backdrop-blur-md shadow-lg">
+               <Activity className="text-white h-7 w-7" strokeWidth={3} />
              </div>
              <div>
-                <span className="text-2xl font-bold text-white tracking-tight block leading-none">Nexile</span>
-                <span className="text-[10px] uppercase tracking-widest text-brand-400 font-bold">Systems</span>
+                <span className="text-2xl font-black text-white tracking-tight block leading-none">Nexile</span>
+                <span className="text-[10px] uppercase tracking-widest text-white/80 font-bold">Systems</span>
              </div>
            </div>
 
-           {/* The Art */}
-           <div className="w-full flex-1 flex items-center justify-center max-w-3xl">
+           {/* Art */}
+           <div className="w-full flex-1 flex items-center justify-center max-w-3xl transform scale-110 translate-y-8">
               <AbstractBuildersArt />
            </div>
 
-           {/* Narrative Text - Moved Up */}
-           <div className="text-center max-w-md -mt-16 mb-12 animate-fadeIn relative z-20">
-             <h1 className="text-5xl font-black text-white mb-3 tracking-tight">
+           {/* Text */}
+           <div className="text-center max-w-md -mt-12 mb-12 relative z-20">
+             <h1 className="text-5xl font-black text-white mb-4 tracking-tight drop-shadow-sm">
                The Pharmacy OS
              </h1>
-             <p className="text-lg text-gray-400 font-medium tracking-wide">
-               Precision control for modern networks.
+             <p className="text-lg text-white/90 font-medium tracking-wide">
+               Simple, smart control for modern networks.
              </p>
-             <div className="flex justify-center gap-4 mt-6">
+             <div className="flex justify-center gap-6 mt-8">
                 <div className="flex flex-col items-center">
-                   <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-1 text-brand-400">
-                      <Code size={14} />
+                   <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mb-2 text-white shadow-inner">
+                      <Code size={16} />
                    </div>
-                   <span className="text-[10px] text-gray-500 uppercase font-bold">Secure</span>
+                   <span className="text-[10px] text-white uppercase font-bold">Secure</span>
                 </div>
-                <div className="w-px h-10 bg-white/10"></div>
                 <div className="flex flex-col items-center">
-                   <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-1 text-blue-400">
-                      <Cpu size={14} />
+                   <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mb-2 text-white shadow-inner">
+                      <Sparkles size={16} />
                    </div>
-                   <span className="text-[10px] text-gray-500 uppercase font-bold">Smart</span>
+                   <span className="text-[10px] text-white uppercase font-bold">Smart</span>
                 </div>
-                <div className="w-px h-10 bg-white/10"></div>
                 <div className="flex flex-col items-center">
-                   <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-1 text-green-400">
-                      <Pill size={14} />
+                   <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mb-2 text-white shadow-inner">
+                      <Pill size={16} />
                    </div>
-                   <span className="text-[10px] text-gray-500 uppercase font-bold">Care</span>
+                   <span className="text-[10px] text-white uppercase font-bold">Care</span>
                 </div>
              </div>
            </div>
         </div>
       </div>
 
-      {/* --- Right Panel: Login Form --- */}
-      <div className="relative flex flex-col items-center justify-center p-6 lg:p-24 bg-[#050505]">
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5"></div>
-        
-        {/* Mobile Branding */}
+      {/* --- RIGHT PANEL: CLEAN WHITE FORM --- */}
+      <div className="relative flex flex-col items-center justify-center p-6 lg:p-24 bg-white">
+        {/* Background Decorations */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-bl-full -z-0 opacity-50"></div>
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-sky-50 rounded-tr-full -z-0 opacity-50"></div>
+
+        {/* Mobile Logo */}
         <div className="lg:hidden mb-10 flex flex-col items-center">
-           <div className="w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center mb-3">
-              <Activity className="text-brand-500 h-8 w-8" />
+           <div className="w-14 h-14 rounded-3xl bg-brand-500 flex items-center justify-center mb-3 text-white shadow-xl shadow-brand-200">
+              <Activity size={32} />
            </div>
-           <span className="text-3xl font-bold text-white">Nexile</span>
+           <span className="text-3xl font-black text-slate-800">Nexile</span>
         </div>
 
         <div className="w-full max-w-md relative z-10">
-            {/* Header Tab Switcher */}
+            {/* Toggle */}
             {mode !== 'RESET' && (
-              <div className="flex p-1.5 gap-1 bg-white/5 rounded-2xl mb-8 border border-white/5">
+              <div className="flex p-1.5 gap-1 bg-slate-100 rounded-2xl mb-8">
                 <button 
                   onClick={() => handleModeSwitch('LOGIN')}
-                  className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${mode === 'LOGIN' ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                  className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${mode === 'LOGIN' ? 'bg-white text-brand-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                   Log In
                 </button>
                 <button 
                   onClick={() => handleModeSwitch('SIGNUP')}
-                  className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${mode === 'SIGNUP' ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                  className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${mode === 'SIGNUP' ? 'bg-white text-brand-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                   Sign Up
                 </button>
               </div>
             )}
 
-            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-sm">
+            <div className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-2xl shadow-slate-200/50">
               {mode === 'RESET' ? (
                  <div className="animate-fadeIn">
-                   <button onClick={() => handleModeSwitch('LOGIN')} className="flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-8 group">
+                   <button onClick={() => handleModeSwitch('LOGIN')} className="flex items-center text-sm text-slate-400 hover:text-brand-600 transition-colors mb-8 group font-bold">
                      <ArrowLeft size={16} className="mr-1 group-hover:-translate-x-1 transition-transform" /> Back to Login
                    </button>
-                   <div className="w-12 h-12 bg-brand-500/10 rounded-xl flex items-center justify-center mb-4 text-brand-400 border border-brand-500/20">
-                      <Lock size={24} />
+                   <div className="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center mb-4 text-sky-500">
+                      <Lock size={28} />
                    </div>
-                   <h2 className="text-2xl font-bold text-white mb-2">Reset Password</h2>
-                   <p className="text-sm text-gray-400 mb-6">Enter your email address and we'll send you instructions to reset your password.</p>
+                   <h2 className="text-2xl font-black text-slate-800 mb-2">Reset Password</h2>
+                   <p className="text-sm text-slate-500 mb-6">Enter your email address and we'll send you instructions.</p>
                  </div>
               ) : (
                 <div className="mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">{mode === 'LOGIN' ? 'Welcome Back' : 'Join Nexile'}</h2>
-                  <p className="text-gray-500 text-sm">{mode === 'LOGIN' ? 'Access your pharmacy dashboard.' : 'Initialize your new account.'}</p>
+                  <h2 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">{mode === 'LOGIN' ? 'Welcome Back!' : 'Get Started'}</h2>
+                  <p className="text-slate-500 font-medium">{mode === 'LOGIN' ? 'Fill in your information here.' : 'Create your free account today.'}</p>
                 </div>
               )}
 
-              {/* Role Select */}
+              {/* Roles */}
               {mode !== 'RESET' && (
                 <div className="grid grid-cols-3 gap-3 mb-8">
                   {[UserRole.OWNER, UserRole.MANAGER, UserRole.PHARMACIST].map((r) => (
                     <button
                       key={r}
                       onClick={() => { setRole(r); setError(''); }}
-                      className={`py-2.5 px-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-xl border transition-all duration-200 ${
+                      className={`py-3 px-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-xl border-2 transition-all duration-200 ${
                         role === r 
-                        ? 'bg-brand-500/10 border-brand-500 text-brand-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]' 
-                        : 'bg-transparent border-white/10 text-gray-500 hover:bg-white/5 hover:border-white/20'
+                        ? 'bg-brand-50 border-brand-500 text-brand-600' 
+                        : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
                       }`}
                     >
                       {r === UserRole.OWNER ? 'Owner' : r === UserRole.MANAGER ? 'Manager' : 'Pharm'}
@@ -421,16 +373,17 @@ export default function Login() {
                 </div>
               )}
 
-              {/* Manager Signup Block */}
               {mode === 'SIGNUP' && role === UserRole.MANAGER ? (
-                <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6 text-center animate-fadeIn">
-                  <AlertCircle className="text-yellow-500 mx-auto mb-3" size={32} />
-                  <h3 className="text-white font-bold mb-2">Restricted Access</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">
-                    Manager accounts must be provisioned by the Owner. Use your generated Access Code to log in.
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 text-center animate-fadeIn">
+                  <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3 text-amber-500">
+                     <AlertCircle size={24} />
+                  </div>
+                  <h3 className="text-amber-800 font-bold mb-2">Invitation Required</h3>
+                  <p className="text-sm text-amber-700/80 leading-relaxed mb-4">
+                    Managers need an Access Code from the Owner to join.
                   </p>
-                  <button onClick={() => handleModeSwitch('LOGIN')} className="mt-4 text-brand-400 font-bold text-sm hover:text-brand-300 transition-colors">
-                    Switch to Login
+                  <button onClick={() => handleModeSwitch('LOGIN')} className="text-brand-600 font-bold text-sm hover:underline">
+                    Have a code? Log In
                   </button>
                 </div>
               ) : (
@@ -438,12 +391,12 @@ export default function Login() {
                   {mode === 'SIGNUP' && (
                     <div className="group">
                       <div className="relative">
-                        <User className="absolute left-4 top-3.5 text-gray-500 group-focus-within:text-brand-400 transition-colors" size={18} />
+                        <User className="absolute left-4 top-4 text-slate-400 group-focus-within:text-brand-500 transition-colors" size={20} />
                         <input
                           type="text"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-gray-600 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                          className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-500 rounded-xl py-3.5 pl-12 pr-4 text-sm font-medium text-slate-900 placeholder-slate-400 outline-none transition-all"
                           placeholder="Full Name"
                         />
                       </div>
@@ -453,12 +406,12 @@ export default function Login() {
                   {(mode === 'RESET' || role === UserRole.OWNER || role === UserRole.PHARMACIST || (role === UserRole.MANAGER && mode === 'LOGIN')) && (
                     <div className="group">
                       <div className="relative">
-                        <Mail className="absolute left-4 top-3.5 text-gray-500 group-focus-within:text-brand-400 transition-colors" size={18} />
+                        <Mail className="absolute left-4 top-4 text-slate-400 group-focus-within:text-brand-500 transition-colors" size={20} />
                         <input
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-gray-600 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                          className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-500 rounded-xl py-3.5 pl-12 pr-4 text-sm font-medium text-slate-900 placeholder-slate-400 outline-none transition-all"
                           placeholder="Email Address"
                         />
                       </div>
@@ -468,18 +421,17 @@ export default function Login() {
                   {role === UserRole.PHARMACIST && mode !== 'RESET' && (
                     <div className="group">
                       <div className="relative">
-                        <Store className="absolute left-4 top-3.5 text-gray-500 group-focus-within:text-brand-400 transition-colors" size={18} />
+                        <Store className="absolute left-4 top-4 text-slate-400 group-focus-within:text-brand-500 transition-colors" size={20} />
                         <select 
                           value={branchId}
                           onChange={(e) => setBranchId(e.target.value)}
-                          className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-gray-600 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none appearance-none cursor-pointer"
+                          className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-500 rounded-xl py-3.5 pl-12 pr-4 text-sm font-medium text-slate-900 outline-none appearance-none cursor-pointer"
                         >
-                          <option value="" className="bg-[#09090b] text-gray-500">Select Branch...</option>
+                          <option value="">Select Branch...</option>
                           {branches.map(b => (
-                            <option key={b.id} value={b.id} className="bg-[#09090b]">{b.name} ({b.location})</option>
+                            <option key={b.id} value={b.id}>{b.name}</option>
                           ))}
                         </select>
-                        <div className="absolute right-4 top-4 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-500 pointer-events-none"></div>
                       </div>
                     </div>
                   )}
@@ -487,13 +439,13 @@ export default function Login() {
                   {role === UserRole.MANAGER && mode === 'LOGIN' && (
                     <div className="group">
                       <div className="relative">
-                        <Lock className="absolute left-4 top-3.5 text-gray-500 group-focus-within:text-brand-400 transition-colors" size={18} />
+                        <Lock className="absolute left-4 top-4 text-slate-400 group-focus-within:text-brand-500 transition-colors" size={20} />
                         <input
                           type="password"
                           value={accessCode}
                           onChange={(e) => setAccessCode(e.target.value)}
-                          className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-gray-600 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-mono tracking-widest"
-                          placeholder="ACCESS CODE"
+                          className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-500 rounded-xl py-3.5 pl-12 pr-4 text-sm font-medium text-slate-900 placeholder-slate-400 outline-none transition-all font-mono tracking-widest"
+                          placeholder="4-DIGIT CODE"
                           maxLength={4}
                         />
                       </div>
@@ -503,12 +455,12 @@ export default function Login() {
                   {role !== UserRole.MANAGER && mode !== 'RESET' && (
                     <div className="group">
                       <div className="relative">
-                        <Lock className="absolute left-4 top-3.5 text-gray-500 group-focus-within:text-brand-400 transition-colors" size={18} />
+                        <Lock className="absolute left-4 top-4 text-slate-400 group-focus-within:text-brand-500 transition-colors" size={20} />
                         <input
                           type="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-gray-600 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                          className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-500 rounded-xl py-3.5 pl-12 pr-4 text-sm font-medium text-slate-900 placeholder-slate-400 outline-none transition-all"
                           placeholder="Password"
                         />
                       </div>
@@ -517,27 +469,27 @@ export default function Login() {
                   
                   {mode === 'LOGIN' && role !== UserRole.MANAGER && (
                     <div className="flex justify-end">
-                       <button type="button" onClick={() => handleModeSwitch('RESET')} className="text-xs text-gray-500 hover:text-brand-400 transition-colors">Forgot Password?</button>
+                       <button type="button" onClick={() => handleModeSwitch('RESET')} className="text-xs font-bold text-slate-400 hover:text-brand-600 transition-colors">Forgot Password?</button>
                     </div>
                   )}
 
                   {error && (
-                    <div className="flex items-center p-3 rounded-lg bg-red-500/10 text-red-400 text-xs border border-red-500/20 animate-shake">
-                      <AlertCircle size={14} className="mr-2 flex-shrink-0" /> {error}
+                    <div className="flex items-center p-4 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold animate-shake">
+                      <AlertCircle size={16} className="mr-2 flex-shrink-0" /> {error}
                     </div>
                   )}
                   {successMsg && (
-                    <div className="flex items-center p-3 rounded-lg bg-green-500/10 text-green-400 text-xs border border-green-500/20 animate-fadeIn">
-                      <CheckCircle size={14} className="mr-2 flex-shrink-0" /> {successMsg}
+                    <div className="flex items-center p-4 rounded-xl bg-emerald-50 text-emerald-600 text-xs font-bold animate-fadeIn">
+                      <CheckCircle size={16} className="mr-2 flex-shrink-0" /> {successMsg}
                     </div>
                   )}
 
                   <button
                     type="submit"
-                    className="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_-5px_rgba(16,185,129,0.3)] transition-all transform hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center group"
+                    className="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-4 rounded-xl shadow-xl shadow-brand-200 transition-all transform hover:-translate-y-1 active:scale-[0.98] flex items-center justify-center group"
                   >
-                    {mode === 'LOGIN' ? 'Access System' : mode === 'SIGNUP' ? 'Initialize Account' : 'Send Reset Link'}
-                    <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                    {mode === 'LOGIN' ? 'Log In' : mode === 'SIGNUP' ? 'Create Account' : 'Send Email'}
+                    <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </form>
               )}

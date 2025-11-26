@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react';
-import { FileText, Download, Sparkles, BrainCircuit, Filter } from 'lucide-react';
+import React, { useState, useContext, useMemo } from 'react';
+import { FileText, Download, Sparkles, BrainCircuit, Filter, ChevronUp, ChevronDown, Search } from 'lucide-react';
 import { db } from '../services/db';
 import { generateGeminiInsights } from '../services/aiService';
 import { AuthContext } from '../App';
@@ -12,6 +12,9 @@ export default function Reports() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiInsights, setAiInsights] = useState<string[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string>('ALL');
+  
+  // Sorting State
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
 
   // Determine accessible branches for the dropdown
   const availableBranches = db.branches.filter(b => {
@@ -34,6 +37,43 @@ export default function Reports() {
     }
 
     return txs;
+  };
+
+  const sortedTransactions = useMemo(() => {
+    let sortableItems = [...getFilteredTransactions()];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        let aValue: any = a[sortConfig.key as keyof typeof a];
+        let bValue: any = b[sortConfig.key as keyof typeof b];
+
+        // Derived values for sorting
+        if (sortConfig.key === 'branch') {
+           aValue = db.branches.find(br => br.id === a.branchId)?.name || '';
+           bValue = db.branches.find(br => br.id === b.branchId)?.name || '';
+        }
+        if (sortConfig.key === 'itemsCount') {
+            aValue = a.items.length;
+            bValue = b.items.length;
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [selectedBranchId, sortConfig, user]);
+
+  const requestSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
   };
 
   const getFilteredInventory = () => {
@@ -106,8 +146,15 @@ export default function Reports() {
     setAiLoading(false);
   };
 
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+    if (sortConfig?.key !== columnKey) return <div className="w-4 h-4 ml-1 opacity-0 group-hover:opacity-30"><ChevronUp size={16}/></div>;
+    return sortConfig.direction === 'asc' 
+      ? <ChevronUp size={16} className="ml-1 text-brand-500"/> 
+      : <ChevronDown size={16} className="ml-1 text-brand-500"/>;
+  };
+
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-fadeIn">
+    <div className="max-w-6xl mx-auto space-y-8 animate-fadeIn pb-10">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports & Intelligence</h1>
@@ -225,6 +272,97 @@ export default function Reports() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Transaction Table */}
+      <div className="bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-xl overflow-hidden shadow-sm">
+        <div className="p-6 border-b border-gray-200 dark:border-dark-border flex items-center justify-between">
+          <h2 className="font-bold text-lg text-gray-900 dark:text-white">Transaction Log</h2>
+          <div className="text-xs text-gray-500 font-medium">
+             Showing {sortedTransactions.length} records
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50 dark:bg-zinc-900/50 text-gray-500 font-medium border-b border-gray-200 dark:border-dark-border">
+              <tr>
+                <th 
+                  className="px-6 py-3 cursor-pointer group hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                  onClick={() => requestSort('id')}
+                >
+                  <div className="flex items-center">
+                    ID <SortIcon columnKey="id" />
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 cursor-pointer group hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                  onClick={() => requestSort('date')}
+                >
+                   <div className="flex items-center">
+                    Date <SortIcon columnKey="date" />
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 cursor-pointer group hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                  onClick={() => requestSort('branch')}
+                >
+                   <div className="flex items-center">
+                    Branch <SortIcon columnKey="branch" />
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-center cursor-pointer group hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                  onClick={() => requestSort('itemsCount')}
+                >
+                   <div className="flex items-center justify-center">
+                    Items <SortIcon columnKey="itemsCount" />
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-right cursor-pointer group hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                  onClick={() => requestSort('total')}
+                >
+                   <div className="flex items-center justify-end">
+                    Total Amount <SortIcon columnKey="total" />
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-dark-border">
+              {sortedTransactions.length === 0 ? (
+                <tr>
+                   <td colSpan={5} className="px-6 py-12 text-center text-gray-500 flex flex-col items-center justify-center">
+                      <Search className="w-8 h-8 mb-2 opacity-20"/>
+                      No transactions found for the selected scope.
+                   </td>
+                </tr>
+              ) : (
+                sortedTransactions.map(tx => {
+                  const branchName = db.branches.find(b => b.id === tx.branchId)?.name || 'Unknown';
+                  return (
+                    <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                       <td className="px-6 py-4 font-mono text-xs text-gray-500">{tx.id}</td>
+                       <td className="px-6 py-4 text-gray-900 dark:text-white font-medium">
+                         {new Date(tx.date).toLocaleString()}
+                       </td>
+                       <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                         {branchName}
+                       </td>
+                       <td className="px-6 py-4 text-center">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-400">
+                            {tx.items.length}
+                          </span>
+                       </td>
+                       <td className="px-6 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                         ${tx.total.toFixed(2)}
+                       </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

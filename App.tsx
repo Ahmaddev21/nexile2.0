@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { User } from './types';
+import { User, UserRole } from './types';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import POS from './pages/POS';
 import Layout from './components/Layout';
 import Reports from './pages/Reports';
+import ExecutiveAnalysis from './pages/ExecutiveAnalysis';
 
 // Auth Context Helper
 export const AuthContext = React.createContext<{
@@ -39,6 +40,16 @@ const AppContent = () => {
       <Route path="/inventory" element={<PrivateRoute><Layout><Inventory /></Layout></PrivateRoute>} />
       <Route path="/pos" element={<PrivateRoute><Layout><POS /></Layout></PrivateRoute>} />
       <Route path="/reports" element={<PrivateRoute><Layout><Reports /></Layout></PrivateRoute>} />
+      
+      {/* Executive Analysis Route - Only for Owners */}
+      <Route path="/executive-analysis" element={
+        <PrivateRoute>
+          <Layout>
+             <ExecutiveAnalysis />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
