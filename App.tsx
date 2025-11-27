@@ -59,18 +59,52 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('nexile_auth_user');
-    if (stored) setUser(JSON.parse(stored));
+    // Initial load
+    const loadUser = () => {
+      const stored = localStorage.getItem('nexile_auth_user');
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored));
+        } catch (e) {
+          console.error("Failed to parse user session", e);
+          localStorage.removeItem('nexile_auth_user');
+        }
+      }
+    };
+
+    loadUser();
+
+    // Live Session Sync: Listen for updates to user data (assignments, roles)
+    const handleUserUpdate = () => {
+      const stored = localStorage.getItem('nexile_auth_user');
+      if (stored) {
+         const updatedUser = JSON.parse(stored);
+         setUser(updatedUser);
+      } else {
+         setUser(null);
+      }
+    };
+
+    window.addEventListener('nexile-user-update', handleUserUpdate);
+    window.addEventListener('storage', handleUserUpdate); // Cross-tab sync
+
+    return () => {
+      window.removeEventListener('nexile-user-update', handleUserUpdate);
+      window.removeEventListener('storage', handleUserUpdate);
+    };
   }, []);
 
   const login = (u: User) => {
     setUser(u);
     localStorage.setItem('nexile_auth_user', JSON.stringify(u));
+    // Dispatch event so other components know immediately
+    window.dispatchEvent(new CustomEvent('nexile-user-update'));
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('nexile_auth_user');
+    window.dispatchEvent(new CustomEvent('nexile-user-update'));
   };
 
   return (

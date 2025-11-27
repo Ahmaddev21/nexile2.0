@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -14,10 +14,13 @@ import {
   Sparkles,
   BrainCircuit,
   Sun,
-  Moon
+  Moon,
+  Search,
+  ChevronRight
 } from 'lucide-react';
 import { AuthContext } from '../App';
-import { UserRole } from '../types';
+import { UserRole, Product, Transaction } from '../types';
+import { db } from '../services/db';
 
 export default function Layout({ children }: { children?: React.ReactNode }) {
   const { user, logout } = React.useContext(AuthContext);
@@ -27,6 +30,11 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
   const [darkMode, setDarkMode] = React.useState(false); // Default to Light Mode for "Cheerful" vibe
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showWelcomeToast, setShowWelcomeToast] = useState(false);
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<{products: Product[], transactions: Transaction[]} | null>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add('dark');
@@ -53,9 +61,68 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
     }
   }, [user]);
 
+  // Search Logic
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setSearchResults(null);
+      return;
+    }
+
+    const q = searchQuery.toLowerCase();
+    
+    // Filter accessible products
+    const products = db.products.filter(p => {
+       // Filter by role scope first
+       if (user?.role === UserRole.PHARMACIST && p.branchId !== user.branchId) return false;
+       if (user?.role === UserRole.MANAGER && !user.assignedBranchIds?.includes(p.branchId)) return false;
+       return true;
+    }).filter(p => 
+      p.name.toLowerCase().includes(q) || 
+      p.sku.toLowerCase().includes(q)
+    ).slice(0, 5);
+
+    // Filter accessible transactions
+    const transactions = db.transactions.filter(t => {
+      if (user?.role === UserRole.PHARMACIST && t.branchId !== user.branchId) return false;
+      if (user?.role === UserRole.MANAGER && !user.assignedBranchIds?.includes(t.branchId)) return false;
+      return true;
+    }).filter(t => 
+      t.id.toLowerCase().includes(q)
+    ).slice(0, 5);
+
+    if (products.length > 0 || transactions.length > 0) {
+      setSearchResults({ products, transactions });
+    } else {
+      setSearchResults(null);
+    }
+  }, [searchQuery, user]);
+
+  // Clear search on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setSearchResults(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Clear search on navigation
+  useEffect(() => {
+    setSearchQuery('');
+    setSearchResults(null);
+  }, [location.pathname]);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleResultClick = (path: string) => {
+    navigate(path);
+    setSearchQuery('');
+    setSearchResults(null);
   };
 
   const menuItems = [
@@ -184,17 +251,96 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-screen overflow-hidden relative bg-[#f8fafc] dark:bg-[#0f172a]">
-        {/* Mobile Header */}
-        <header className="h-16 lg:hidden flex items-center justify-between px-4 bg-white/80 dark:bg-dark-card/80 backdrop-blur-md border-b border-slate-200 dark:border-dark-border sticky top-0 z-20">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-brand-200">
-               <Activity className="h-5 w-5" />
-            </div>
-            <span className="font-bold text-lg text-slate-800 dark:text-white">Nexile</span>
+        
+        {/* Universal Header (Mobile + Global Search) */}
+        <header className="h-16 flex items-center justify-between px-4 lg:px-8 bg-white/80 dark:bg-dark-card/80 backdrop-blur-md border-b border-slate-200 dark:border-dark-border sticky top-0 z-20">
+          <div className="flex items-center gap-4">
+             {/* Mobile Menu Button */}
+             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden p-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl">
+               {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+             </button>
+             
+             {/* Mobile Logo */}
+             <div className="lg:hidden flex items-center gap-2">
+               <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-brand-200">
+                  <Activity className="h-5 w-5" />
+               </div>
+               <span className="font-bold text-lg text-slate-800 dark:text-white">Nexile</span>
+             </div>
           </div>
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl">
-             {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+
+          {/* Global Search Bar */}
+          <div className="flex-1 max-w-lg mx-auto relative ml-4 lg:ml-0" ref={searchRef}>
+             <div className="relative group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition-colors" size={18} />
+                <input 
+                  type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search inventory, transactions..." 
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand-500 focus:bg-white dark:focus:bg-slate-700 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all"
+                />
+             </div>
+
+             {/* Search Results Dropdown */}
+             {searchResults && (
+               <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-dark-card rounded-2xl shadow-2xl border border-slate-100 dark:border-dark-border overflow-hidden z-50 animate-scaleIn origin-top">
+                  
+                  {/* Products Section */}
+                  {searchResults.products.length > 0 && (
+                     <div className="py-2">
+                        <h4 className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center">
+                           <Package size={12} className="mr-1.5" /> Products
+                        </h4>
+                        {searchResults.products.map(p => (
+                           <button 
+                             key={p.id} 
+                             onClick={() => handleResultClick('/inventory')}
+                             className="w-full text-left px-4 py-3 hover:bg-brand-50 dark:hover:bg-brand-900/10 flex justify-between items-center group transition-colors"
+                           >
+                              <div>
+                                 <p className="font-bold text-sm text-slate-800 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400">{p.name}</p>
+                                 <p className="text-xs text-slate-500 font-mono">{p.sku}</p>
+                              </div>
+                              <ChevronRight size={16} className="text-slate-300 group-hover:text-brand-500" />
+                           </button>
+                        ))}
+                     </div>
+                  )}
+
+                  {/* Transactions Section */}
+                  {searchResults.transactions.length > 0 && (
+                     <div className="py-2 border-t border-slate-100 dark:border-slate-800">
+                        <h4 className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center">
+                           <FileBarChart size={12} className="mr-1.5" /> Transactions
+                        </h4>
+                        {searchResults.transactions.map(t => (
+                           <button 
+                             key={t.id} 
+                             onClick={() => handleResultClick('/reports')}
+                             className="w-full text-left px-4 py-3 hover:bg-brand-50 dark:hover:bg-brand-900/10 flex justify-between items-center group transition-colors"
+                           >
+                              <div>
+                                 <p className="font-bold text-sm text-slate-800 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400">Transaction #{t.id.split('-')[1] || t.id}</p>
+                                 <p className="text-xs text-slate-500">{new Date(t.date).toLocaleDateString()} • ${t.total.toFixed(2)}</p>
+                              </div>
+                              <ChevronRight size={16} className="text-slate-300 group-hover:text-brand-500" />
+                           </button>
+                        ))}
+                     </div>
+                  )}
+
+                  {searchResults.products.length === 0 && searchResults.transactions.length === 0 && (
+                     <div className="p-8 text-center text-slate-400">
+                        <Search size={24} className="mx-auto mb-2 opacity-30" />
+                        <p className="text-sm font-medium">No results found.</p>
+                     </div>
+                  )}
+               </div>
+             )}
+          </div>
+
+          <div className="w-8 hidden lg:block"></div> {/* Spacer for symmetry */}
         </header>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-8">

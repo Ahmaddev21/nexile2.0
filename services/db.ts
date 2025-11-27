@@ -62,6 +62,20 @@ class DB {
 
   private setStorage(key: string, data: any) {
     localStorage.setItem(key, JSON.stringify(data));
+    // Trigger storage event for cross-tab sync
+    window.dispatchEvent(new Event('storage'));
+  }
+
+  // Helper to notify App.tsx of user changes within the same tab
+  private notifyUserUpdate(userId: string) {
+    const currentUser = localStorage.getItem('nexile_auth_user');
+    if (currentUser) {
+      const parsed = JSON.parse(currentUser);
+      if (parsed.id === userId) {
+        // If the modified user is the currently logged-in user, dispatch event to refresh context
+        window.dispatchEvent(new CustomEvent('nexile-user-update'));
+      }
+    }
   }
 
   get branches(): Branch[] { return this.getStorage('nexile_branches', SEED_BRANCHES); }
@@ -90,14 +104,22 @@ class DB {
     // 2. Cleanup: Remove this branch ID from any managers assigned to it
     const users = this.users.map(u => {
       if (u.role === UserRole.MANAGER && u.assignedBranchIds) {
-        return {
+        const updatedUser = {
           ...u,
           assignedBranchIds: u.assignedBranchIds.filter(id => id !== branchId)
         };
+        // Update session if this user is logged in
+        if (updatedUser.assignedBranchIds.length !== u.assignedBranchIds.length) {
+           // We need to persist this change to the main user list, handled by setStorage below
+        }
+        return updatedUser;
       }
       return u;
     });
     this.setStorage('nexile_users', users);
+    
+    // Force refresh for any logged in managers affected
+    window.dispatchEvent(new CustomEvent('nexile-user-update'));
   }
 
   getBranchPerformance(branchId: string) {
@@ -139,6 +161,31 @@ class DB {
     return newUser;
   }
 
+  createManager(name: string, email: string, accessCode: string): User {
+    const users = this.users;
+    if (users.some(u => u.email === email)) {
+      throw new Error("Email already registered.");
+    }
+    if (accessCode.length !== 4) {
+      throw new Error("Access code must be 4 digits.");
+    }
+
+    const newManager: User = {
+      id: `u${Date.now()}`,
+      name,
+      email,
+      role: UserRole.MANAGER,
+      assignedBranchIds: [],
+      subscriptionStatus: 'active',
+      trialEndsAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+      accessCode: accessCode
+    };
+
+    users.push(newManager);
+    this.setStorage('nexile_users', users);
+    return newManager;
+  }
+
   deleteUser(userId: string) {
     const users = this.users.filter(u => u.id !== userId);
     this.setStorage('nexile_users', users);
@@ -170,6 +217,16 @@ class DB {
     if (index !== -1) {
       users[index] = updatedUser;
       this.setStorage('nexile_users', users);
+      
+      // Update the current session if this is the logged-in user
+      const currentUserStr = localStorage.getItem('nexile_auth_user');
+      if (currentUserStr) {
+          const currentUser = JSON.parse(currentUserStr);
+          if (currentUser.id === updatedUser.id) {
+              localStorage.setItem('nexile_auth_user', JSON.stringify(updatedUser));
+              window.dispatchEvent(new CustomEvent('nexile-user-update'));
+          }
+      }
     }
   }
 
@@ -188,10 +245,16 @@ class DB {
   unassignManagerFromBranch(managerId: string, branchId: string) {
     const users = this.users;
     const manager = users.find(u => u.id === managerId);
-    if (manager && manager.role === UserRole.MANAGER && manager.assignedBranchIds) {
-      manager.assignedBranchIds = manager.assignedBranchIds.filter(id => id !== branchId);
-      this.updateUser(manager);
-    }
+    
+    // Safety checks
+    if (!manager) return;
+    if (manager.role !== UserRole.MANAGER) return;
+    
+    // Ensure array exists before filtering
+    const currentAssignments = manager.assignedBranchIds || [];
+    
+    manager.assignedBranchIds = currentAssignments.filter(id => id !== branchId);
+    this.updateUser(manager);
   }
 
   generateAccessCode(): string {

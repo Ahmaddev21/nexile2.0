@@ -31,7 +31,9 @@ import {
   UserMinus,
   Eye,
   FileText,
-  Clock
+  Clock,
+  Search,
+  Plus
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, ResponsiveContainer } from 'recharts';
 
@@ -122,25 +124,15 @@ const BranchDetailsModal = ({ branch, onClose }: { branch: Branch, onClose: () =
 
     // Calculate Profit
     let totalCost = 0;
-    txs.forEach(tx => {
+    const allBranchTxs = db.transactions.filter(t => t.branchId === branch.id);
+    allBranchTxs.forEach(tx => {
        tx.items.forEach(item => {
           const product = db.products.find(p => p.id === item.productId);
           if (product) totalCost += (product.cost * item.quantity);
           else totalCost += (item.price * item.quantity * 0.5);
        });
     });
-    // This profit calc is only for the *recent* transactions slice for simplicity in this view, 
-    // or we can calc total profit. Let's do total profit for the branch.
-    const allBranchTxs = db.transactions.filter(t => t.branchId === branch.id);
-    let allTotalCost = 0;
-    allBranchTxs.forEach(tx => {
-       tx.items.forEach(item => {
-          const product = db.products.find(p => p.id === item.productId);
-          if (product) allTotalCost += (product.cost * item.quantity);
-          else allTotalCost += (item.price * item.quantity * 0.5);
-       });
-    });
-    const totalProfit = perf.revenue - allTotalCost;
+    const totalProfit = perf.revenue - totalCost;
 
     setStats({
       revenue: perf.revenue,
@@ -631,67 +623,111 @@ const OwnerDashboard = ({ stats, insights, topSelling }: any) => {
   const [generatedCode, setGeneratedCode] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   
-  // Branch assignment state
-  const [selectedAssignments, setSelectedAssignments] = useState<{[key:string]: string}>({});
+  // Manual Manager Registration
+  const [newMgrName, setNewMgrName] = useState('');
+  const [newMgrEmail, setNewMgrEmail] = useState('');
+  const [newMgrCode, setNewMgrCode] = useState('');
 
+  // Branch assignment state - now stores text input
+  const [assignInputTexts, setAssignInputTexts] = useState<{[key:string]: string}>({});
+  
   useEffect(() => {
-    setManagers(db.getManagers());
-    setBranches(db.branches);
+    refreshData();
   }, [activeTab]);
+
+  const refreshData = () => {
+     setManagers([...db.getManagers()]);
+     setBranches([...db.branches]);
+  };
 
   const handleCreateBranch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBranchName || !newBranchLoc) return;
     db.createBranch(newBranchName, newBranchLoc);
-    setBranches(db.branches);
     setNewBranchName('');
     setNewBranchLoc('');
+    refreshData();
   };
 
-  const handleDeleteBranch = (id: string) => {
+  const handleDeleteBranch = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
+    
     if (window.confirm("Are you sure you want to delete this branch? This cannot be undone.")) {
       db.deleteBranch(id);
-      setBranches(db.branches);
-      setManagers(db.getManagers()); // Refresh managers as their assignments might change
+      refreshData();
     }
   };
 
-  const handleDeleteManager = (id: string) => {
+  const handleDeleteManager = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
+
     if (window.confirm("Are you sure you want to delete this manager account?")) {
       db.deleteUser(id);
-      setManagers(db.getManagers());
+      refreshData();
+    }
+  };
+
+  const handleCreateManager = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMgrName || !newMgrEmail || !newMgrCode) return;
+    try {
+      db.createManager(newMgrName, newMgrEmail, newMgrCode);
+      alert(`Manager ${newMgrName} created successfully!`);
+      setNewMgrName('');
+      setNewMgrEmail('');
+      setNewMgrCode('');
+      refreshData();
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
   const handleGenerateCode = () => {
-    setGeneratedCode(db.generateAccessCode());
+    const code = db.generateAccessCode();
+    setGeneratedCode(code);
+    setNewMgrCode(code); 
     setIsCopied(false);
   };
 
   const handleAssignManager = (managerId: string, branchId: string) => {
     db.assignManagerToBranch(managerId, branchId);
-    setManagers(db.getManagers()); // Refresh list
+    refreshData();
   };
 
-  const handleUnassignManager = (managerId: string, branchId: string) => {
+  const handleUnassignManager = (e: React.MouseEvent, managerId: string, branchId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
+    
     if (window.confirm("Are you sure you want to unassign this manager from the branch?")) {
       db.unassignManagerFromBranch(managerId, branchId);
-      setManagers(db.getManagers()); // Refresh list
+      refreshData();
     }
   };
 
-  const handleSelectManagerChange = (branchId: string, managerId: string) => {
-    setSelectedAssignments(prev => ({...prev, [branchId]: managerId}));
+  const handleInputChange = (branchId: string, value: string) => {
+    setAssignInputTexts(prev => ({...prev, [branchId]: value}));
   };
   
   const confirmBranchAssignment = (branchId: string) => {
-    const managerId = selectedAssignments[branchId];
-    if (managerId) {
-       handleAssignManager(managerId, branchId);
-       // Clear selection
-       const newSel = {...selectedAssignments};
-       delete newSel[branchId];
-       setSelectedAssignments(newSel);
+    const nameToFind = assignInputTexts[branchId]?.trim();
+    if (!nameToFind) return;
+
+    const foundManager = managers.find(m => m.name.toLowerCase() === nameToFind.toLowerCase());
+    
+    if (foundManager) {
+       handleAssignManager(foundManager.id, branchId);
+       const newInputs = {...assignInputTexts};
+       delete newInputs[branchId];
+       setAssignInputTexts(newInputs);
+       alert(`Successfully assigned ${foundManager.name}`);
+       refreshData();
+    } else {
+       alert(`Manager "${nameToFind}" not found. Please check spelling or create the manager first.`);
     }
   };
 
@@ -706,6 +742,13 @@ const OwnerDashboard = ({ stats, insights, topSelling }: any) => {
       {selectedBranch && (
          <BranchDetailsModal branch={selectedBranch} onClose={() => setSelectedBranch(null)} />
       )}
+
+      {/* Datalist for autocomplete */}
+      <datalist id="manager-list">
+        {managers.map(m => (
+          <option key={m.id} value={m.name} />
+        ))}
+      </datalist>
 
       <div className="flex border-b border-slate-200 dark:border-dark-border mb-6">
         {['OVERVIEW', 'BRANCHES', 'STAFF'].map(tab => (
@@ -722,7 +765,6 @@ const OwnerDashboard = ({ stats, insights, topSelling }: any) => {
       {activeTab === 'OVERVIEW' && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Cheerful Gradient Card */}
             <div className="bg-gradient-to-r from-sky-400 to-brand-500 rounded-3xl p-8 text-white shadow-xl shadow-sky-200 relative overflow-hidden hover:-translate-y-1 transition-transform">
               <div className="relative z-10">
                 <p className="text-sky-100 font-bold text-sm mb-1 uppercase tracking-wide">Total Net Profit</p>
@@ -779,7 +821,6 @@ const OwnerDashboard = ({ stats, insights, topSelling }: any) => {
               </div>
             </div>
 
-            {/* AI Widget - Cheerful Style */}
             <div className="bg-slate-900 rounded-3xl p-6 shadow-xl text-white flex flex-col relative overflow-hidden border border-slate-800">
               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500 blur-[60px] opacity-40 rounded-full pointer-events-none"></div>
               <h3 className="font-bold text-lg mb-4 flex items-center relative z-10">
@@ -807,97 +848,109 @@ const OwnerDashboard = ({ stats, insights, topSelling }: any) => {
           <div className="lg:col-span-2 space-y-4">
              {branches.length === 0 && <p className="text-center py-10 text-slate-400">No branches found.</p>}
              {branches.map(branch => {
-               // Find manager for this branch
                const manager = managers.find(m => m.assignedBranchIds?.includes(branch.id));
                
                return (
-                <div key={branch.id} className="bg-white dark:bg-dark-card p-6 rounded-3xl border border-slate-100 dark:border-dark-border shadow-card flex items-center justify-between hover:shadow-card-hover transition-shadow group relative overflow-hidden">
-                   <div>
+                <div key={branch.id} onClick={() => setSelectedBranch(branch)} className="bg-white dark:bg-dark-card p-6 rounded-3xl border border-slate-100 dark:border-dark-border shadow-card flex items-center justify-between hover:shadow-card-hover transition-shadow group relative overflow-hidden cursor-pointer">
+                   <div className="flex-1 mr-4">
                       <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
                         {branch.name}
                       </h3>
                       <p className="text-sm text-slate-500 flex items-center mt-1"><MapPin size={14} className="mr-1"/> {branch.location}</p>
-                      <div className="mt-3 flex items-center text-xs">
-                        <Users size={12} className="mr-1 text-slate-400" />
-                        <span className="font-bold text-slate-400 uppercase tracking-wide mr-2">Manager:</span>
+                      
+                      <div className="mt-4 flex items-center gap-2 text-sm" onClick={e => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}>
+                        <Users size={14} className="text-slate-400" />
+                        <span className="font-bold text-slate-500 uppercase text-xs tracking-wide">Manager:</span>
+                        
                         {manager ? (
-                          <div className="flex items-center gap-2">
-                             <span className="font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-md">{manager.name}</span>
-                             <button 
-                                onClick={() => handleUnassignManager(manager.id, branch.id)}
-                                className="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded transition-colors"
-                                title="Unassign Manager"
-                             >
-                                <X size={12} />
-                             </button>
+                          <div className="flex items-center gap-2 bg-sky-50 dark:bg-sky-900/20 px-3 py-1 rounded-lg border border-sky-100 dark:border-sky-800 relative z-10">
+                             <span className="font-bold text-sky-700 dark:text-sky-300">{manager.name}</span>
+                             <div className="relative z-50 ml-1" onClick={e => e.stopPropagation()}>
+                               <button 
+                                  type="button"
+                                  onClick={(e) => handleUnassignManager(e, manager.id, branch.id)}
+                                  className="p-1 bg-white hover:bg-rose-100 text-sky-400 hover:text-rose-500 rounded-full transition-colors border border-transparent hover:border-rose-200 cursor-pointer"
+                                  title="Unassign Manager"
+                               >
+                                  <X size={12} />
+                               </button>
+                             </div>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2">
-                             <select 
-                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold py-1 px-2 rounded outline-none text-slate-700 dark:text-slate-200 focus:ring-1 focus:ring-brand-500"
-                                onChange={(e) => handleSelectManagerChange(branch.id, e.target.value)}
-                                value={selectedAssignments[branch.id] || ""}
-                             >
-                                <option value="" disabled>Select Manager...</option>
-                                {managers.filter(m => !m.assignedBranchIds?.includes(branch.id)).map(m => (
-                                   <option key={m.id} value={m.id}>{m.name}</option>
-                                ))}
-                             </select>
-                             {selectedAssignments[branch.id] && (
-                                <button 
-                                   onClick={() => confirmBranchAssignment(branch.id)}
-                                   className="p-1 bg-brand-500 text-white rounded hover:bg-brand-600 transition-colors"
-                                   title="Confirm Assignment"
-                                >
-                                   <Check size={12} />
-                                </button>
-                             )}
+                          <div className="flex items-center gap-2 flex-1 max-w-xs relative z-10">
+                             <div className="relative flex-1" onClick={e => e.stopPropagation()}>
+                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={12}/>
+                                <input 
+                                   list="manager-list"
+                                   type="text"
+                                   placeholder="Search manager..."
+                                   className="w-full pl-7 pr-2 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium rounded-lg outline-none focus:ring-2 focus:ring-brand-500 text-slate-900 dark:text-white"
+                                   onChange={(e) => handleInputChange(branch.id, e.target.value)}
+                                   onClick={(e) => e.stopPropagation()}
+                                   value={assignInputTexts[branch.id] || ""}
+                                />
+                             </div>
+                             <div className="relative z-50" onClick={e => e.stopPropagation()}>
+                               <button 
+                                  type="button"
+                                  onClick={(e) => { e.preventDefault(); confirmBranchAssignment(branch.id); }}
+                                  disabled={!assignInputTexts[branch.id]}
+                                  className="p-1.5 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
+                                  title="Confirm Assignment"
+                               >
+                                  <Check size={14} />
+                               </button>
+                             </div>
                           </div>
                         )}
                       </div>
                    </div>
-                   <div className="flex flex-col items-end gap-2">
-                      <span className="bg-emerald-50 text-emerald-600 font-bold px-3 py-1 rounded-lg text-sm">Active</span>
-                      <div className="flex gap-2 mt-2">
+
+                   <div className="flex flex-col items-end gap-3 z-10">
+                      <span className="bg-emerald-50 text-emerald-600 font-bold px-3 py-1 rounded-lg text-xs border border-emerald-100">Active</span>
+                      <div className="relative z-50" onClick={e => e.stopPropagation()}>
                         <button 
-                           onClick={() => setSelectedBranch(branch)}
-                           className="p-2 text-brand-500 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors border border-brand-100"
-                           title="View Details"
+                            type="button"
+                            onClick={(e) => handleDeleteBranch(e, branch.id)}
+                            className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors bg-white border border-slate-100 cursor-pointer"
+                            title="Delete Branch"
                         >
-                           <Eye size={16} />
-                        </button>
-                        <button 
-                           onClick={() => handleDeleteBranch(branch.id)}
-                           className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                           title="Delete Branch"
-                        >
-                           <Trash2 size={16} />
+                            <Trash2 size={18} />
                         </button>
                       </div>
                    </div>
                 </div>
              )})}
           </div>
-          <div className="bg-white dark:bg-dark-card p-6 rounded-3xl border border-slate-100 dark:border-dark-border shadow-card h-fit">
+
+          <div className="bg-white dark:bg-dark-card p-6 rounded-3xl border border-slate-100 dark:border-dark-border shadow-card h-fit sticky top-20">
              <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white flex items-center">
                <Building className="mr-2 text-brand-500"/> Add Branch
              </h3>
              <form onSubmit={handleCreateBranch} className="space-y-4">
-                <input 
-                  type="text" 
-                  value={newBranchName} 
-                  onChange={e => setNewBranchName(e.target.value)} 
-                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-brand-500 border-2 outline-none transition-all text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400" 
-                  placeholder="Branch Name" 
-                />
-                <input 
-                  type="text" 
-                  value={newBranchLoc} 
-                  onChange={e => setNewBranchLoc(e.target.value)} 
-                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-brand-500 border-2 outline-none transition-all text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400" 
-                  placeholder="Location" 
-                />
-                <button type="submit" className="w-full py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-500/20">Deploy Branch</button>
+                <div>
+                   <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Branch Name</label>
+                   <input 
+                     type="text" 
+                     value={newBranchName} 
+                     onChange={e => setNewBranchName(e.target.value)} 
+                     className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-brand-500 border-2 outline-none transition-all text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400" 
+                     placeholder="e.g. Westside Clinic" 
+                   />
+                </div>
+                <div>
+                   <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Location</label>
+                   <input 
+                     type="text" 
+                     value={newBranchLoc} 
+                     onChange={e => setNewBranchLoc(e.target.value)} 
+                     className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-brand-500 border-2 outline-none transition-all text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400" 
+                     placeholder="e.g. Los Angeles, CA" 
+                   />
+                </div>
+                <button type="submit" className="w-full py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-500/20 flex justify-center items-center">
+                   <Plus size={18} className="mr-2"/> Deploy Branch
+                </button>
              </form>
           </div>
         </div>
@@ -915,73 +968,119 @@ const OwnerDashboard = ({ stats, insights, topSelling }: any) => {
                     <div className="text-center py-10 text-slate-400">
                        <ShieldCheck size={40} className="mx-auto mb-2 opacity-20"/>
                        <p>No managers registered yet.</p>
-                       <p className="text-xs">Generate an Access Code to invite them.</p>
+                       <p className="text-xs">Use the forms to add one.</p>
                     </div>
                  ) : (
                     <div className="space-y-4">
                        {managers.map(mgr => (
                           <div key={mgr.id} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4 group">
-                             <div>
-                                <h4 className="font-bold text-slate-800 dark:text-white">{mgr.name}</h4>
-                                <p className="text-xs text-slate-500">{mgr.email}</p>
+                             <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center font-bold">
+                                   {mgr.name.charAt(0)}
+                                </div>
+                                <div>
+                                   <h4 className="font-bold text-slate-800 dark:text-white">{mgr.name}</h4>
+                                   <p className="text-xs text-slate-500">{mgr.email}</p>
+                                </div>
                              </div>
                              
-                             <div className="flex items-center gap-2">
-                                <MapPin size={16} className="text-slate-400" />
-                                <select 
-                                   className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-xs font-bold py-2 px-3 rounded-lg outline-none text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-brand-500"
-                                   onChange={(e) => handleAssignManager(mgr.id, e.target.value)}
-                                   defaultValue=""
-                                >
-                                   <option value="" disabled>Add to Branch...</option>
-                                   {branches.map(b => (
-                                      <option key={b.id} value={b.id} disabled={mgr.assignedBranchIds?.includes(b.id)}>
-                                         {b.name}
-                                      </option>
-                                   ))}
-                                </select>
-                             </div>
-
                              <div className="flex items-center gap-2 justify-end min-w-[150px]">
-                                <div className="flex gap-1 flex-wrap justify-end">
+                                <div className="flex gap-1 flex-wrap justify-end relative z-10">
                                     {mgr.assignedBranchIds?.map(bid => {
                                     const bName = branches.find(b => b.id === bid)?.name || bid;
                                     return (
-                                        <div key={bid} className="flex items-center bg-sky-100 text-sky-700 px-2 py-1 rounded-md">
+                                        <div key={bid} className="flex items-center bg-white border border-sky-100 text-sky-700 px-2 py-1 rounded-lg shadow-sm">
                                             <span className="text-[10px] font-bold mr-1">{bName}</span>
-                                            <button 
-                                                onClick={() => handleUnassignManager(mgr.id, bid)}
-                                                className="text-sky-700 hover:text-red-500"
-                                            >
-                                                <UserMinus size={10} />
-                                            </button>
+                                            <div className="relative z-50" onClick={e => e.stopPropagation()}>
+                                              <button 
+                                                  type="button"
+                                                  onClick={(e) => handleUnassignManager(e, mgr.id, bid)}
+                                                  className="text-sky-400 hover:text-rose-500 transition-colors p-0.5 rounded-full hover:bg-rose-100 cursor-pointer"
+                                              >
+                                                  <X size={12} />
+                                              </button>
+                                            </div>
                                         </div>
                                     );
                                     })}
                                     {(!mgr.assignedBranchIds || mgr.assignedBranchIds.length === 0) && (
-                                        <span className="text-[10px] text-slate-400 italic">No branch assigned</span>
+                                        <span className="text-[10px] text-slate-400 italic bg-slate-100 px-2 py-1 rounded-lg">Unassigned</span>
                                     )}
                                 </div>
-                                <button 
-                                    onClick={() => handleDeleteManager(mgr.id)}
-                                    className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
-                                    title="Delete Manager"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
+                                <div className="relative z-50 ml-2" onClick={e => e.stopPropagation()}>
+                                  <button 
+                                      type="button"
+                                      onClick={(e) => handleDeleteManager(e, mgr.id)}
+                                      className="p-2 bg-white text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all border border-slate-100 cursor-pointer"
+                                      title="Delete Manager"
+                                  >
+                                      <Trash2 size={16} />
+                                  </button>
+                                </div>
                              </div>
                           </div>
                        ))}
                     </div>
                  )}
               </div>
+              
+              {/* Manual Registration Form */}
+              <div className="bg-white dark:bg-dark-card p-6 rounded-3xl border border-slate-100 dark:border-dark-border shadow-card">
+                  <h3 className="font-bold text-lg mb-4 flex items-center text-slate-800 dark:text-white">
+                    <UserPlus className="mr-2 text-brand-500" /> Manually Register Manager
+                  </h3>
+                  <form onSubmit={handleCreateManager} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="col-span-2 md:col-span-1">
+                          <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Full Name</label>
+                          <input 
+                              required
+                              type="text" 
+                              value={newMgrName}
+                              onChange={e => setNewMgrName(e.target.value)}
+                              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-brand-500 border-2 outline-none transition-all text-sm font-medium text-slate-900 dark:text-white"
+                              placeholder="e.g. John Doe"
+                          />
+                      </div>
+                      <div className="col-span-2 md:col-span-1">
+                          <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Email</label>
+                          <input 
+                              required
+                              type="email" 
+                              value={newMgrEmail}
+                              onChange={e => setNewMgrEmail(e.target.value)}
+                              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-brand-500 border-2 outline-none transition-all text-sm font-medium text-slate-900 dark:text-white"
+                              placeholder="e.g. john@nexile.com"
+                          />
+                      </div>
+                      <div className="col-span-2">
+                          <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Access Code (4 Digits)</label>
+                          <div className="flex gap-2">
+                             <input 
+                                required
+                                type="text" 
+                                maxLength={4}
+                                value={newMgrCode}
+                                onChange={e => setNewMgrCode(e.target.value.replace(/\D/g,''))}
+                                className="flex-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-brand-500 border-2 outline-none transition-all text-sm font-medium text-slate-900 dark:text-white tracking-widest font-mono"
+                                placeholder="0000"
+                             />
+                             <button type="button" onClick={() => setNewMgrCode(db.generateAccessCode())} className="px-4 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600">
+                                Auto-Gen
+                             </button>
+                          </div>
+                      </div>
+                      <button type="submit" className="col-span-2 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-500/20">
+                          Create Account
+                      </button>
+                  </form>
+              </div>
            </div>
 
            {/* Access Code Generator */}
-           <div className="bg-white dark:bg-dark-card p-6 rounded-3xl border border-slate-100 dark:border-dark-border shadow-card h-fit">
-              <h3 className="font-bold text-lg mb-2 text-slate-800 dark:text-white">Manager Access</h3>
+           <div className="bg-white dark:bg-dark-card p-6 rounded-3xl border border-slate-100 dark:border-dark-border shadow-card h-fit sticky top-20">
+              <h3 className="font-bold text-lg mb-2 text-slate-800 dark:text-white">Quick Code Generator</h3>
               <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-                 Generate a secure 4-digit code for new managers to log in. This code serves as their initial password.
+                 Need to invite someone? Generate a code and share it.
               </p>
               
               {generatedCode ? (
@@ -1029,114 +1128,92 @@ const OwnerDashboard = ({ stats, insights, topSelling }: any) => {
 
 export default function Dashboard() {
   const { user } = useContext(AuthContext);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>({ revenue: 0, profit: 0, transactions: 0, itemsSold: 0, lowStock: 0, totalStock: 0 });
+  const [stats, setStats] = useState({ revenue: 0, itemsSold: 0, lowStock: 0, totalStock: 0, transactions: 0, profit: 0 });
   const [insights, setInsights] = useState<Insight[]>([]);
   const [topSelling, setTopSelling] = useState<any[]>([]);
 
   useEffect(() => {
-    // Simulate data loading
-    const loadData = () => {
-      // Filter scope based on role
-      let relevantTxs = db.transactions;
-      let relevantProds = db.products;
+    if (!user) return;
 
-      if (user?.role === UserRole.MANAGER && user.assignedBranchIds) {
-        relevantTxs = relevantTxs.filter(t => user.assignedBranchIds?.includes(t.branchId));
-        relevantProds = relevantProds.filter(p => user.assignedBranchIds?.includes(p.branchId));
-      } else if (user?.role === UserRole.PHARMACIST && user.branchId) {
-        relevantTxs = relevantTxs.filter(t => t.branchId === user.branchId);
-        relevantProds = relevantProds.filter(p => p.branchId === user.branchId);
-      }
+    const calculateStats = () => {
+       // Filter based on role
+       let relevantTxs = db.transactions;
+       let relevantProducts = db.products;
 
-      // Calculations
-      const revenue = relevantTxs.reduce((acc, t) => acc + t.total, 0);
-      const itemsSold = relevantTxs.reduce((acc, t) => acc + t.items.reduce((sum, i) => sum + i.quantity, 0), 0);
-      const lowStock = relevantProds.filter(p => p.stock <= p.minStockLevel).length;
-      const totalStock = relevantProds.reduce((acc, p) => acc + (p.stock * p.price), 0);
-      
-      // Profit Estimate (Revenue - Cost of goods sold). 
-      // We need to look up cost for sold items.
-      let totalCost = 0;
-      relevantTxs.forEach(tx => {
-         tx.items.forEach(item => {
-            const product = db.products.find(p => p.id === item.productId);
-            if (product) {
-               totalCost += (product.cost * item.quantity);
-            } else {
-               // Fallback if product deleted, assume 50% margin
-               totalCost += (item.price * item.quantity * 0.5);
-            }
-         });
-      });
-      const profit = revenue - totalCost;
+       if (user.role === UserRole.PHARMACIST && user.branchId) {
+          relevantTxs = relevantTxs.filter(t => t.branchId === user.branchId);
+          relevantProducts = relevantProducts.filter(p => p.branchId === user.branchId);
+       }
+       if (user.role === UserRole.MANAGER && user.assignedBranchIds) {
+          relevantTxs = relevantTxs.filter(t => user.assignedBranchIds?.includes(t.branchId));
+          relevantProducts = relevantProducts.filter(p => user.assignedBranchIds?.includes(p.branchId));
+       }
 
-      setStats({
-        revenue,
-        profit,
-        transactions: relevantTxs.length,
-        itemsSold,
-        lowStock,
-        totalStock
-      });
+       const revenue = relevantTxs.reduce((acc, t) => acc + t.total, 0);
+       const itemsSold = relevantTxs.reduce((acc, t) => acc + t.items.reduce((sum, i) => sum + i.quantity, 0), 0);
+       const lowStock = relevantProducts.filter(p => p.stock <= p.minStockLevel).length;
+       const totalStock = relevantProducts.reduce((acc, p) => acc + (p.stock * p.price), 0);
+       
+       // Calc Profit
+       let totalCost = 0;
+       relevantTxs.forEach(tx => {
+           tx.items.forEach(item => {
+               const product = db.products.find(p => p.id === item.productId);
+               if (product) totalCost += (product.cost * item.quantity);
+               else totalCost += (item.price * item.quantity * 0.5);
+           });
+       });
 
-      // Insights
-      const branchContext = user?.role === UserRole.PHARMACIST ? user.branchId : undefined;
-      setInsights(getStatisticalInsights(branchContext));
+       // Top Selling
+       const productSales: {[key: string]: {name: string, sold: number, category: string}} = {};
+       relevantTxs.forEach(tx => {
+          tx.items.forEach(item => {
+             if (!productSales[item.productId]) {
+                 productSales[item.productId] = { name: item.productName, sold: 0, category: 'General' };
+                 const p = db.products.find(x => x.id === item.productId);
+                 if (p) productSales[item.productId].category = p.category;
+             }
+             productSales[item.productId].sold += item.quantity;
+          });
+       });
+       const sortedTop = Object.values(productSales).sort((a,b) => b.sold - a.sold).slice(0, 5);
 
-      // Top Selling
-      const itemMap = new Map<string, any>();
-      relevantTxs.forEach(t => {
-        t.items.forEach(i => {
-           const existing = itemMap.get(i.productId) || { name: i.productName, sold: 0, category: 'General' };
-           const p = relevantProds.find(p => p.id === i.productId);
-           if (p) existing.category = p.category;
-           existing.sold += i.quantity;
-           itemMap.set(i.productId, existing);
-        });
-      });
-      
-      const sorted = Array.from(itemMap.values()).sort((a, b) => b.sold - a.sold).slice(0, 5);
-      setTopSelling(sorted);
+       setStats({
+          revenue,
+          itemsSold,
+          lowStock,
+          totalStock,
+          transactions: relevantTxs.length,
+          profit: revenue - totalCost
+       });
+       setTopSelling(sortedTop);
 
-      setLoading(false);
+       // Insights
+       const branchId = user.role === UserRole.PHARMACIST ? user.branchId : undefined;
+       // For manager/owner we might aggregate or show global, here we just show global or specific if pharma
+       setInsights(getStatisticalInsights(branchId)); 
     };
 
-    // Small delay for realism
-    const timer = setTimeout(loadData, 500);
-    return () => clearTimeout(timer);
+    calculateStats();
+    // In a real app we might poll or listen to DB changes
   }, [user]);
 
-  if (loading) {
-    return (
-       <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400">
-         <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-500 rounded-full animate-spin mb-4"></div>
-         <p className="font-bold text-sm">Aggregating Live Data...</p>
-       </div>
-    );
-  }
+  if (!user) return null;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-           <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center">
-             Nexile: Brain Behind Business
-           </h1>
-           <p className="text-slate-500 font-medium mt-1">Here's what's happening in your pharmacy today.</p>
-        </div>
-        <div className="text-right hidden md:block">
-           <p className="text-xs font-bold text-slate-400 uppercase">System Status</p>
-           <div className="flex items-center text-emerald-500 font-bold text-sm">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
-              All Systems Operational
-           </div>
-        </div>
+    <div className="max-w-7xl mx-auto">
+      <div className="mb-8">
+         <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+           Dashboard
+         </h1>
+         <p className="text-slate-500 font-medium">
+           Welcome back, <span className="text-brand-600 font-bold">{user.name}</span>. Here is your daily overview.
+         </p>
       </div>
 
-      {user?.role === UserRole.PHARMACIST && <PharmacistDashboard stats={stats} insights={insights} topSelling={topSelling} />}
-      {user?.role === UserRole.MANAGER && <ManagerDashboard stats={stats} user={user} topSelling={topSelling} />}
-      {user?.role === UserRole.OWNER && <OwnerDashboard stats={stats} insights={insights} topSelling={topSelling} />}
+      {user.role === UserRole.PHARMACIST && <PharmacistDashboard stats={stats} insights={insights} topSelling={topSelling} />}
+      {user.role === UserRole.MANAGER && <ManagerDashboard stats={stats} user={user} topSelling={topSelling} />}
+      {user.role === UserRole.OWNER && <OwnerDashboard stats={stats} insights={insights} topSelling={topSelling} />}
     </div>
   );
 }
