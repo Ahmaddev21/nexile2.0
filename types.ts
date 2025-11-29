@@ -52,7 +52,23 @@ export interface Transaction {
 }
 
 export interface Insight {
-  type: 'prediction' | 'warning' | 'success';
+  type: 'prediction' | 'warning' | 'success' | 'info';
   message: string;
-  metric?: string;
+  metric: string;
+}
+
+export interface PharmacistMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  module?: 'interaction' | 'dosage' | 'advice' | 'non-pharma' | 'recommendation' | 'stock' | 'general';
+  sources?: { title: string; url: string }[];
+}
+
+export interface PharmacistConversation {
+  id: string;
+  messages: PharmacistMessage[];
+  createdAt: Date;
+  updatedAt: Date;
 }

@@ -8,6 +8,8 @@ import POS from './pages/POS';
 import Layout from './components/Layout';
 import Reports from './pages/Reports';
 import ExecutiveAnalysis from './pages/ExecutiveAnalysis';
+import AIPharmacist from './pages/AIPharmacist';
+import AIPharmacistMenu from './pages/AIPharmacistMenu';
 
 // Auth Context Helper
 export const AuthContext = React.createContext<{
@@ -16,8 +18,8 @@ export const AuthContext = React.createContext<{
   logout: () => void;
 }>({
   user: null,
-  login: () => {},
-  logout: () => {},
+  login: () => { },
+  logout: () => { },
 });
 
 const PrivateRoute = ({ children }: { children?: React.ReactNode }) => {
@@ -40,16 +42,34 @@ const AppContent = () => {
       <Route path="/inventory" element={<PrivateRoute><Layout><Inventory /></Layout></PrivateRoute>} />
       <Route path="/pos" element={<PrivateRoute><Layout><POS /></Layout></PrivateRoute>} />
       <Route path="/reports" element={<PrivateRoute><Layout><Reports /></Layout></PrivateRoute>} />
-      
+
+      {/* AI Pharmacist Intelligence Menu */}
+      <Route path="/ai-pharmacist" element={
+        <PrivateRoute>
+          <Layout>
+            <AIPharmacistMenu />
+          </Layout>
+        </PrivateRoute>
+      } />
+
+      {/* AI Pharmacist Chat */}
+      <Route path="/ai-pharmacist/chat" element={
+        <PrivateRoute>
+          <Layout>
+            <AIPharmacist />
+          </Layout>
+        </PrivateRoute>
+      } />
+
       {/* Executive Analysis Route - Only for Owners */}
       <Route path="/executive-analysis" element={
         <PrivateRoute>
           <Layout>
-             <ExecutiveAnalysis />
+            <ExecutiveAnalysis />
           </Layout>
         </PrivateRoute>
       } />
-      
+
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
@@ -78,10 +98,10 @@ export default function App() {
     const handleUserUpdate = () => {
       const stored = localStorage.getItem('nexile_auth_user');
       if (stored) {
-         const updatedUser = JSON.parse(stored);
-         setUser(updatedUser);
+        const updatedUser = JSON.parse(stored);
+        setUser(updatedUser);
       } else {
-         setUser(null);
+        setUser(null);
       }
     };
 
